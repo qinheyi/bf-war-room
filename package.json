@@ -1,0 +1,25 @@
+{
+  "name": "bf-war-room",
+  "version": "1.0.0",
+  "description": "Black Friday payments war room: concurrent Mozaik agents for fraud, disputes, settlement reconciliation and revenue, with an auditor agent that checks every number against synthetic source rows.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Qin HEYI",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "demo": "tsx src/cli.ts --offline",
+    "live": "tsx src/cli.ts --live",
+    "generate-data": "tsx scripts/generate-data.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mozaik-ai/core": "6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0"
+  }
+}

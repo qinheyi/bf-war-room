@@ -1,0 +1,70 @@
+{
+  "note": "Ground truth of deliberately planted defects. Used only by tests; agents never read this file.",
+  "card_testing_device": "D-CT7Q2X",
+  "card_testing_orders": [
+    "BF-000185",
+    "BF-000186",
+    "BF-000187",
+    "BF-000188",
+    "BF-000189",
+    "BF-000190",
+    "BF-000191",
+    "BF-000193",
+    "BF-000194",
+    "BF-000195",
+    "BF-000197",
+    "BF-000198",
+    "BF-000199",
+    "BF-000200",
+    "BF-000201",
+    "BF-000202",
+    "BF-000203",
+    "BF-000206",
+    "BF-000207",
+    "BF-000208",
+    "BF-000209",
+    "BF-000211",
+    "BF-000212",
+    "BF-000213",
+    "BF-000214",
+    "BF-000215"
+  ],
+  "settlement_missing": [
+    "BF-000044",
+    "BF-000144",
+    "BF-000262",
+    "BF-000363",
+    "BF-000462",
+    "BF-000564",
+    "BF-000662",
+    "BF-000766",
+    "BF-000867",
+    "BF-000968",
+    "BF-001072",
+    "BF-001175"
+  ],
+  "settlement_duplicated": [
+    "BF-000136",
+    "BF-000425",
+    "BF-000699",
+    "BF-000973"
+  ],
+  "settlement_fee_overcharge": [
+    "BF-000083",
+    "BF-000253",
+    "BF-000406",
+    "BF-000562",
+    "BF-000718",
+    "BF-000872",
+    "BF-001028",
+    "BF-001187"
+  ],
+  "settlement_gross_mismatch": [
+    "BF-000106",
+    "BF-000340",
+    "BF-000560",
+    "BF-000779",
+    "BF-001000",
+    "BF-001223"
+  ]
+}

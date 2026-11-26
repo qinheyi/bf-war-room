@@ -1,0 +1,4 @@
+payment_method,pct,fixed
+card,0.029,0.30
+wallet,0.025,0.30
+chargeback_fee,0,15.00

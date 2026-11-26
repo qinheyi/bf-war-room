@@ -1,0 +1,916 @@
+{
+  "provider": "minimax",
+  "model": "MiniMax-M3.1-Flash",
+  "elapsedMs": 40231,
+  "events": [
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Flight Recorder"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Report Desk"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Auditor"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Fraud Sentinel"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Disputes Desk"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Ledger Reconciler"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Revenue Analyst"
+    },
+    {
+      "t": 1,
+      "type": "participant.joined",
+      "producer": "Ops Lead"
+    },
+    {
+      "t": 1,
+      "type": "message.sent",
+      "producer": "Ops Lead"
+    },
+    {
+      "t": 2,
+      "type": "message_received.started",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 2,
+      "type": "message_received.completed",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 2,
+      "type": "message_received.started",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 2,
+      "type": "message_received.completed",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 2,
+      "type": "message_received.started",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 2,
+      "type": "message_received.completed",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 2,
+      "type": "message_received.started",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 2,
+      "type": "message_received.completed",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 2,
+      "type": "inference.started",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 4,
+      "type": "inference.started",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 4,
+      "type": "inference.started",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 4,
+      "type": "inference.started",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 1730,
+      "type": "inference.completed",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 1730,
+      "type": "interception.started",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 1730,
+      "type": "interception.finished",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 1731,
+      "type": "function_call.started",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2",
+      "detail": "triage_disputes"
+    },
+    {
+      "t": 1742,
+      "type": "function_call.completed",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 1742,
+      "type": "inference.started",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 1861,
+      "type": "inference.completed",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 1861,
+      "type": "interception.started",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 1861,
+      "type": "interception.finished",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 1861,
+      "type": "function_call.started",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5",
+      "detail": "reconcile_settlements"
+    },
+    {
+      "t": 1865,
+      "type": "function_call.completed",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 1865,
+      "type": "inference.started",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 1867,
+      "type": "inference.completed",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 1867,
+      "type": "interception.started",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 1867,
+      "type": "interception.finished",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 1867,
+      "type": "function_call.started",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657",
+      "detail": "score_orders"
+    },
+    {
+      "t": 1869,
+      "type": "function_call.completed",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 1870,
+      "type": "inference.started",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 2236,
+      "type": "inference.completed",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 2236,
+      "type": "interception.started",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 2236,
+      "type": "interception.finished",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 2236,
+      "type": "function_call.started",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737",
+      "detail": "sales_summary"
+    },
+    {
+      "t": 2238,
+      "type": "function_call.completed",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 2238,
+      "type": "inference.started",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 4844,
+      "type": "inference.completed",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 4844,
+      "type": "interception.started",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 4845,
+      "type": "interception.finished",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 4845,
+      "type": "model.answer",
+      "producer": "Fraud Sentinel",
+      "loopId": "e9e011d7-39e6-4b2b-96ab-0c1f9c965657"
+    },
+    {
+      "t": 4845,
+      "type": "message_received.started",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 4845,
+      "type": "message_received.completed",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 4845,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 4872,
+      "type": "inference.completed",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 4872,
+      "type": "interception.started",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 4873,
+      "type": "interception.finished",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 4873,
+      "type": "model.answer",
+      "producer": "Disputes Desk",
+      "loopId": "04a6ff96-5e30-4718-8d84-4fe7757f6ff2"
+    },
+    {
+      "t": 4873,
+      "type": "message_received.started",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 4873,
+      "type": "message_received.completed",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 4873,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 5089,
+      "type": "inference.completed",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 5089,
+      "type": "interception.started",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 5090,
+      "type": "interception.finished",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 5090,
+      "type": "model.answer",
+      "producer": "Ledger Reconciler",
+      "loopId": "10f990d1-a4e4-444e-9e8a-7770b31af2f5"
+    },
+    {
+      "t": 5090,
+      "type": "message_received.started",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 5090,
+      "type": "message_received.completed",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 5090,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 6688,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 6688,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 6688,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 6688,
+      "type": "function_call.started",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9",
+      "detail": "verify_figures"
+    },
+    {
+      "t": 6717,
+      "type": "audit.agent_verified",
+      "producer": "Auditor"
+    },
+    {
+      "t": 6717,
+      "type": "function_call.completed",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 6717,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 7267,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 7267,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 7267,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 7267,
+      "type": "function_call.started",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db",
+      "detail": "verify_figures"
+    },
+    {
+      "t": 7267,
+      "type": "audit.agent_verified",
+      "producer": "Auditor"
+    },
+    {
+      "t": 7267,
+      "type": "function_call.completed",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 7267,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 9714,
+      "type": "inference.completed",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 9714,
+      "type": "interception.started",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 9714,
+      "type": "interception.finished",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 9714,
+      "type": "model.answer",
+      "producer": "Revenue Analyst",
+      "loopId": "cb207f32-53c8-4e3a-99f9-93bb70132737"
+    },
+    {
+      "t": 9715,
+      "type": "message_received.started",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 9715,
+      "type": "message_received.completed",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 9715,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 10550,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 10550,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 10551,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 10551,
+      "type": "model.answer",
+      "producer": "Auditor",
+      "loopId": "ef7ae78b-e7fa-4ad2-b66a-0a8271fcd7b9"
+    },
+    {
+      "t": 12113,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 12113,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 12113,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 12113,
+      "type": "function_call.started",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9",
+      "detail": "verify_figures"
+    },
+    {
+      "t": 12121,
+      "type": "audit.agent_verified",
+      "producer": "Auditor"
+    },
+    {
+      "t": 12122,
+      "type": "function_call.completed",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 12122,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 12395,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 12395,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 12396,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 12396,
+      "type": "model.answer",
+      "producer": "Auditor",
+      "loopId": "a13e0727-a56f-445c-9471-41cd4c5967db"
+    },
+    {
+      "t": 18822,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 18822,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 18823,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 18823,
+      "type": "model.answer",
+      "producer": "Auditor",
+      "loopId": "aa20bd4b-19a3-4168-b335-5a6bcb885de9"
+    },
+    {
+      "t": 26079,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 26079,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 26079,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 26079,
+      "type": "function_call.started",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc",
+      "detail": "verify_figures"
+    },
+    {
+      "t": 26080,
+      "type": "audit.agent_verified",
+      "producer": "Auditor"
+    },
+    {
+      "t": 26081,
+      "type": "message_received.started",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 26081,
+      "type": "message_received.completed",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 26081,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 26081,
+      "type": "function_call.completed",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 26081,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 27942,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 27943,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 27943,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 27943,
+      "type": "function_call.started",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b",
+      "detail": "cross_check"
+    },
+    {
+      "t": 27945,
+      "type": "function_call.completed",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 27945,
+      "type": "inference.started",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 32546,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 32546,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 32547,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 32547,
+      "type": "model.answer",
+      "producer": "Auditor",
+      "loopId": "f1afacfe-04d1-439a-b582-bd1d4361966b"
+    },
+    {
+      "t": 40229,
+      "type": "inference.completed",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 40229,
+      "type": "interception.started",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 40230,
+      "type": "interception.finished",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 40230,
+      "type": "model.answer",
+      "producer": "Auditor",
+      "loopId": "b220bb4f-a429-4f83-9105-b40688f406cc"
+    },
+    {
+      "t": 40230,
+      "type": "audit.completed",
+      "producer": "Auditor"
+    }
+  ],
+  "gate": [
+    {
+      "agent": "Disputes Desk",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "triage_disputes (read-only; no money can move)",
+      "t": 1730
+    },
+    {
+      "agent": "Ledger Reconciler",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "reconcile_settlements (read-only; no money can move)",
+      "t": 1861
+    },
+    {
+      "agent": "Fraud Sentinel",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "score_orders (read-only; no money can move)",
+      "t": 1867
+    },
+    {
+      "agent": "Revenue Analyst",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "sales_summary (read-only; no money can move)",
+      "t": 2236
+    },
+    {
+      "agent": "Fraud Sentinel",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "14 numbers checked, 0 unverified",
+      "t": 4845
+    },
+    {
+      "agent": "Disputes Desk",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "15 numbers checked, 0 unverified",
+      "t": 4873
+    },
+    {
+      "agent": "Ledger Reconciler",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "24 numbers checked, 0 unverified",
+      "t": 5090
+    },
+    {
+      "agent": "Auditor",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "verify_figures (read-only; no money can move)",
+      "t": 6688
+    },
+    {
+      "agent": "Auditor",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "verify_figures (read-only; no money can move)",
+      "t": 7267
+    },
+    {
+      "agent": "Revenue Analyst",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "20 numbers checked, 0 unverified",
+      "t": 9714
+    },
+    {
+      "agent": "Auditor",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "6 numbers checked, 0 unverified",
+      "t": 10551
+    },
+    {
+      "agent": "Auditor",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "verify_figures (read-only; no money can move)",
+      "t": 12113
+    },
+    {
+      "agent": "Auditor",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "4 numbers checked, 0 unverified",
+      "t": 12396
+    },
+    {
+      "agent": "Auditor",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "5 numbers checked, 0 unverified",
+      "t": 18823
+    },
+    {
+      "agent": "Auditor",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "verify_figures (read-only; no money can move)",
+      "t": 26079
+    },
+    {
+      "agent": "Auditor",
+      "stage": "function_call",
+      "action": "allowed",
+      "detail": "cross_check (read-only; no money can move)",
+      "t": 27943
+    },
+    {
+      "agent": "Auditor",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "6 numbers checked, 0 unverified",
+      "t": 32547
+    },
+    {
+      "agent": "Auditor",
+      "stage": "model_message",
+      "action": "passed",
+      "detail": "4 numbers checked, 0 unverified",
+      "t": 40230
+    }
+  ]
+}
