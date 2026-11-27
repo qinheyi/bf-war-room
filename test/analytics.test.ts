@@ -9,6 +9,7 @@ import { runFraud } from "../src/analytics/fraud.ts"
 import { decide, runDisputes } from "../src/analytics/disputes.ts"
 import { runReconcile } from "../src/analytics/reconcile.ts"
 import { runRevenue } from "../src/analytics/revenue.ts"
+import { runPayments } from "../src/analytics/payments.ts"
 
 const planted = JSON.parse(readFileSync(join(DATA_DIR, "planted_defects.json"), "utf8"))
 
@@ -57,8 +58,8 @@ test("revenue identities hold: placed = captured + declined, list - discount = c
 test("every evidence ID is unique across agents", () => {
   const L = new EvidenceLedger()
   const d = loadData()
-  runFraud(d, L), runDisputes(d, L), runReconcile(d, L), runRevenue(d, L)
+  runFraud(d, L), runDisputes(d, L), runReconcile(d, L), runRevenue(d, L), runPayments(d, L)
   const ids = L.all().map((e) => e.id)
   assert.equal(new Set(ids).size, ids.length)
-  assert.equal(ids.length, 51)
+  assert.equal(ids.length, 71)
 })
