@@ -2,9 +2,9 @@
 
 > **Not financial advice. All data is synthetic (fixed seed, fictional store "Lumen & Loom"); no real customers, accounts or money are involved. Refund, chargeback and claim decisions are drafts for a human to review; nothing here moves money.**
 
-Run: offline mode (model `offline-policy`), @mozaik-ai/core 6.0.0, 1439 ms wall time, 9 agent loops, up to 5 running at once. Store day: 2026-11-27 (UTC). Report as of 2026-12-01.
+Run: offline mode (model `offline-policy`), @mozaik-ai/core 6.0.0, 1425 ms wall time, 11 agent loops, up to 6 running at once. Store day: 2026-11-27 (UTC). Report as of 2026-12-01.
 
-Audit status: 56 of 56 figures recomputed by the Auditor from the raw CSV lines they cite; 6 of 6 cross-agent checks pass; 32 numbers in agent summaries went through the number gate and 0 were flagged as unverified.
+Audit status: 76 of 76 figures recomputed by the Auditor from the raw CSV lines they cite; 11 of 11 cross-agent checks pass; 41 numbers in agent summaries went through the number gate and 0 were flagged as unverified.
 
 ## Do this today
 
@@ -13,6 +13,7 @@ Audit status: 56 of 56 figures recomputed by the Auditor from the raw CSV lines 
 - **Answer 3 [D14] chargebacks due within 7 days.** Fight 6 [D7] ($836.82 [D8]) with AVS/CVV/delivery proof; accept 14 [D9] ($2,394.11 [D10]).
 - **Approve 62 [D2] refunds** ($7,085.39 [D3]) and decline 1 [D4] final-sale request ($67.72 [D5]).
 - **File processor claims**: 12 [L8] captured orders never paid out (-$1,244.32 [L9]), 6 [L14] short settlements (-$58.34 [L15]), 8 [L12] fee overcharges (-$4.40 [L13]). Set aside the $394.99 [L11] paid twice on 4 [L10] orders for the clawback.
+- **Work the payment exceptions** (new: Payment Investigator): retry 23 [P17] stuck payments worth $2,279.03 [P18] (14 [P5] 3-D Secure timeouts get a fresh payment link, 9 [P7] gateway errors get one idempotent retry); void 5 [P15] duplicate authorisations on already-paid orders ($408.85 [P16]); send 29 [P13] risk-engine blocks ($2,217.62 [P14]) to manual review; email the 10 [P9] insufficient-funds and 5 [P11] other declined customers instead of retrying.
 - Payout variance is -$912.07 [L7] and the unexplained remainder is $0.00 [L16].
 
 ## Headline numbers
@@ -28,6 +29,8 @@ Audit status: 56 of 56 figures recomputed by the Auditor from the raw CSV lines 
 | Net sales after approved refunds and accepted chargebacks | $112,507.58 | [A5] |
 | Sentinel recall on fraud chargebacks | 53.8% | [A3] |
 | Fraud chargeback amount a hold would have protected | $1,980.31 | [A4] |
+| Sales recoverable by retrying | $2,279.03 | [P18] |
+| Duplicate authorisations on paid orders: amount | $408.85 | [P16] |
 
 ## Fraud Sentinel
 
@@ -202,11 +205,125 @@ Revenue Analyst report (synthetic data; not financial advice)
 | R12 | Wallet (Apple/Google Pay) sales | $23,143.64 | sum(charged_amount) over captured wallet orders | orders.csv L2, L8, L14, L27, L34, L63, … (+213) [219 rows] | ✅ recomputed |
 | R13 | Wallet share of sales | 19.0% | R12 / R7 × 100 | computed: R12 / R7 * 100 | ✅ recomputed |
 
+## Payment Investigator
+
+```text
+Payment Investigator report (synthetic data; not financial advice)
+- Payment exceptions reviewed: 72 [P1]
+- Attempts to retry (3-D Secure timeouts + gateway errors): 23 [P17]
+- Sales recoverable by retrying: $2,279.03 [P18]
+- Duplicate authorisations on paid orders: 5 [P15]
+- Duplicate authorisations on paid orders: amount: $408.85 [P16]
+- Risk-engine blocks: 29 [P13]
+- Risk-engine blocks: amount: $2,217.62 [P14]
+- Insufficient funds declines: 10 [P9]
+```
+
+| ID | Figure | Value | Recipe | Source | Audit |
+| --- | --- | --- | --- | --- | --- |
+| P1 | Payment exceptions reviewed | 72 | count(payment_exceptions.csv rows) | payment_exceptions.csv L2, L3, L4, L5, L6, L7, … (+66) [72 rows] | ✅ recomputed |
+| P2 | Failed attempts | 47 | count(status = failed) | payment_exceptions.csv L2, L6, L7, L8, L9, L11, … (+41) [47 rows] | ✅ recomputed |
+| P3 | Pending (stuck) attempts | 25 | count(status = pending) | payment_exceptions.csv L3, L4, L5, L10, L31, L32, … (+19) [25 rows] | ✅ recomputed |
+| P4 | Amount in payment exceptions | $6,580.90 | sum(amount) over all exception rows | payment_exceptions.csv L2, L3, L4, L5, L6, L7, … (+66) [72 rows] | ✅ recomputed |
+| P5 | 3-D Secure timeouts | 14 | count(rows classified 3ds_timeout by PI-3DS) (rules: PI-3DS) | payment_exceptions.csv L32, L34, L41, L43, L46, L50, … (+8) [14 rows] re-classified: 3ds_timeout | ✅ recomputed |
+| P6 | 3-D Secure timeouts: amount | $1,458.58 | sum(amount) over P5 rows (rules: PI-3DS) | payment_exceptions.csv L32, L34, L41, L43, L46, L50, … (+8) [14 rows] re-classified: 3ds_timeout | ✅ recomputed |
+| P7 | Gateway errors | 9 | count(rows classified gateway_error by PI-GW) (rules: PI-GW) | payment_exceptions.csv L3, L31, L36, L44, L49, L59, … (+3) [9 rows] re-classified: gateway_error | ✅ recomputed |
+| P8 | Gateway errors: amount | $820.45 | sum(amount) over P7 rows (rules: PI-GW) | payment_exceptions.csv L3, L31, L36, L44, L49, L59, … (+3) [9 rows] re-classified: gateway_error | ✅ recomputed |
+| P9 | Insufficient funds declines | 10 | count(rows classified insufficient_funds by PI-NSF) (rules: PI-NSF) | payment_exceptions.csv L29, L30, L37, L38, L45, L48, … (+4) [10 rows] re-classified: insufficient_funds | ✅ recomputed |
+| P10 | Insufficient funds declines: amount | $1,191.00 | sum(amount) over P9 rows (rules: PI-NSF) | payment_exceptions.csv L29, L30, L37, L38, L45, L48, … (+4) [10 rows] re-classified: insufficient_funds | ✅ recomputed |
+| P11 | Other issuer declines | 5 | count(rows classified issuer_decline by PI-ISSUER) (rules: PI-ISSUER) | payment_exceptions.csv L2, L39, L40, L56, L57 [5 rows] re-classified: issuer_decline | ✅ recomputed |
+| P12 | Other issuer declines: amount | $484.40 | sum(amount) over P11 rows (rules: PI-ISSUER) | payment_exceptions.csv L2, L39, L40, L56, L57 [5 rows] re-classified: issuer_decline | ✅ recomputed |
+| P13 | Risk-engine blocks | 29 | count(rows classified risk_block by PI-RISK) (rules: PI-RISK) | payment_exceptions.csv L6, L7, L8, L9, L11, L12, … (+23) [29 rows] re-classified: risk_block | ✅ recomputed |
+| P14 | Risk-engine blocks: amount | $2,217.62 | sum(amount) over P13 rows (rules: PI-RISK) | payment_exceptions.csv L6, L7, L8, L9, L11, L12, … (+23) [29 rows] re-classified: risk_block | ✅ recomputed |
+| P15 | Duplicate authorisations on paid orders | 5 | count(rows classified duplicate_charge by PI-DUP) (rules: PI-DUP) | payment_exceptions.csv L4, L5, L10, L35, L54 [5 rows] re-classified: duplicate_charge | ✅ recomputed |
+| P16 | Duplicate authorisations on paid orders: amount | $408.85 | sum(amount) over P15 rows (rules: PI-DUP) | payment_exceptions.csv L4, L5, L10, L35, L54 [5 rows] re-classified: duplicate_charge | ✅ recomputed |
+| P17 | Attempts to retry (3-D Secure timeouts + gateway errors) | 23 | P5 + P7 (rules: PI-3DS, PI-GW) | computed: P5 + P7 | ✅ recomputed |
+| P18 | Sales recoverable by retrying | $2,279.03 | P6 + P8 (rules: PI-3DS, PI-GW) | computed: P6 + P8 | ✅ recomputed |
+| P19 | Share of exception value recoverable by retrying | 34.6% | P18 / P4 × 100 | computed: P18 / P4 * 100 | ✅ recomputed |
+| P20 | Exceptions left without a cause | 0 | P1 - (P5 + P7 + P9 + P11 + P13 + P15) | computed: P1 - (P5 + P7 + P9 + P11 + P13 + P15) | ✅ recomputed |
+
+Every failed or pending payment attempt, its cause (derived from the raw signals; the CSV has no cause column) and the recommended action (drafts; nothing is retried or refunded automatically):
+
+| Attempt | Order | Status | Signals | Cause | Rule | Action | Amount | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PA-0001 | BF-000005 | failed | code 05 · 3DS none · HTTP 200 · risk allow | issuer_decline | PI-ISSUER | do not retry; ask the customer for another payment method | $60.87 | payment_exceptions.csv L2 |
+| PA-0002 | BF-000016 | pending | code - · 3DS none · HTTP 502 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $54.64 | payment_exceptions.csv L3 |
+| PA-0003 | BF-000012 | pending | code 00 · 3DS frictionless · HTTP 200 · risk allow | duplicate_charge | PI-DUP | void the duplicate authorisation (refund if it captures); the order was already paid | $91.56 | payment_exceptions.csv L4 |
+| PA-0004 | BF-000042 | pending | code 00 · 3DS frictionless · HTTP 200 · risk allow | duplicate_charge | PI-DUP | void the duplicate authorisation (refund if it captures); the order was already paid | $91.18 | payment_exceptions.csv L5 |
+| PA-0005 | BF-000068 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $320.30 | payment_exceptions.csv L6 |
+| PA-0006 | BF-000072 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $270.83 | payment_exceptions.csv L7 |
+| PA-0007 | BF-000077 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $352.98 | payment_exceptions.csv L8 |
+| PA-0008 | BF-000150 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $170.96 | payment_exceptions.csv L9 |
+| PA-0009 | BF-000157 | pending | code 00 · 3DS frictionless · HTTP 200 · risk allow | duplicate_charge | PI-DUP | void the duplicate authorisation (refund if it captures); the order was already paid | $77.29 | payment_exceptions.csv L10 |
+| PA-0010 | BF-000185 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.20 | payment_exceptions.csv L11 |
+| PA-0011 | BF-000186 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $2.90 | payment_exceptions.csv L12 |
+| PA-0012 | BF-000188 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $2.26 | payment_exceptions.csv L13 |
+| PA-0013 | BF-000189 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $4.32 | payment_exceptions.csv L14 |
+| PA-0014 | BF-000191 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.77 | payment_exceptions.csv L15 |
+| PA-0015 | BF-000193 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $1.95 | payment_exceptions.csv L16 |
+| PA-0016 | BF-000194 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $1.23 | payment_exceptions.csv L17 |
+| PA-0017 | BF-000195 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $4.02 | payment_exceptions.csv L18 |
+| PA-0018 | BF-000197 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.13 | payment_exceptions.csv L19 |
+| PA-0019 | BF-000199 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $4.10 | payment_exceptions.csv L20 |
+| PA-0020 | BF-000200 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $4.70 | payment_exceptions.csv L21 |
+| PA-0021 | BF-000201 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.94 | payment_exceptions.csv L22 |
+| PA-0022 | BF-000203 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.37 | payment_exceptions.csv L23 |
+| PA-0023 | BF-000206 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $1.31 | payment_exceptions.csv L24 |
+| PA-0024 | BF-000207 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.82 | payment_exceptions.csv L25 |
+| PA-0025 | BF-000208 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $4.23 | payment_exceptions.csv L26 |
+| PA-0026 | BF-000209 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.32 | payment_exceptions.csv L27 |
+| PA-0027 | BF-000212 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $3.58 | payment_exceptions.csv L28 |
+| PA-0028 | BF-000218 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $90.42 | payment_exceptions.csv L29 |
+| PA-0029 | BF-000238 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $92.17 | payment_exceptions.csv L30 |
+| PA-0030 | BF-000297 | pending | code - · 3DS frictionless · HTTP 502 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $123.20 | payment_exceptions.csv L31 |
+| PA-0031 | BF-000335 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $106.92 | payment_exceptions.csv L32 |
+| PA-0032 | BF-000350 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $136.64 | payment_exceptions.csv L33 |
+| PA-0033 | BF-000351 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $107.80 | payment_exceptions.csv L34 |
+| PA-0034 | BF-000365 | pending | code 00 · 3DS none · HTTP 200 · risk allow | duplicate_charge | PI-DUP | void the duplicate authorisation (refund if it captures); the order was already paid | $47.64 | payment_exceptions.csv L35 |
+| PA-0035 | BF-000421 | pending | code - · 3DS frictionless · HTTP 502 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $84.22 | payment_exceptions.csv L36 |
+| PA-0036 | BF-000445 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $122.48 | payment_exceptions.csv L37 |
+| PA-0037 | BF-000471 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $92.18 | payment_exceptions.csv L38 |
+| PA-0038 | BF-000476 | failed | code 05 · 3DS frictionless · HTTP 200 · risk allow | issuer_decline | PI-ISSUER | do not retry; ask the customer for another payment method | $120.09 | payment_exceptions.csv L39 |
+| PA-0039 | BF-000481 | failed | code 05 · 3DS frictionless · HTTP 200 · risk allow | issuer_decline | PI-ISSUER | do not retry; ask the customer for another payment method | $52.05 | payment_exceptions.csv L40 |
+| PA-0040 | BF-000486 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $72.19 | payment_exceptions.csv L41 |
+| PA-0041 | BF-000519 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $336.77 | payment_exceptions.csv L42 |
+| PA-0042 | BF-000635 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $172.78 | payment_exceptions.csv L43 |
+| PA-0043 | BF-000663 | pending | code - · 3DS frictionless · HTTP 504 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $99.00 | payment_exceptions.csv L44 |
+| PA-0044 | BF-000673 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $60.07 | payment_exceptions.csv L45 |
+| PA-0045 | BF-000680 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $56.68 | payment_exceptions.csv L46 |
+| PA-0046 | BF-000690 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $122.14 | payment_exceptions.csv L47 |
+| PA-0047 | BF-000702 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $128.58 | payment_exceptions.csv L48 |
+| PA-0048 | BF-000714 | pending | code - · 3DS frictionless · HTTP 504 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $72.27 | payment_exceptions.csv L49 |
+| PA-0049 | BF-000719 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $98.57 | payment_exceptions.csv L50 |
+| PA-0050 | BF-000813 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $91.19 | payment_exceptions.csv L51 |
+| PA-0051 | BF-000823 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $190.79 | payment_exceptions.csv L52 |
+| PA-0052 | BF-000836 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $88.95 | payment_exceptions.csv L53 |
+| PA-0053 | BF-000850 | pending | code 00 · 3DS frictionless · HTTP 200 · risk allow | duplicate_charge | PI-DUP | void the duplicate authorisation (refund if it captures); the order was already paid | $101.18 | payment_exceptions.csv L54 |
+| PA-0054 | BF-000862 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $73.51 | payment_exceptions.csv L55 |
+| PA-0055 | BF-000897 | failed | code 05 · 3DS none · HTTP 200 · risk allow | issuer_decline | PI-ISSUER | do not retry; ask the customer for another payment method | $110.27 | payment_exceptions.csv L56 |
+| PA-0056 | BF-000906 | failed | code 05 · 3DS none · HTTP 200 · risk allow | issuer_decline | PI-ISSUER | do not retry; ask the customer for another payment method | $141.12 | payment_exceptions.csv L57 |
+| PA-0057 | BF-000920 | failed | code 51 · 3DS frictionless · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $157.20 | payment_exceptions.csv L58 |
+| PA-0058 | BF-000965 | pending | code - · 3DS frictionless · HTTP 504 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $169.45 | payment_exceptions.csv L59 |
+| PA-0059 | BF-000989 | failed | code - · 3DS frictionless · HTTP 504 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $50.43 | payment_exceptions.csv L60 |
+| PA-0060 | BF-000999 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $115.25 | payment_exceptions.csv L61 |
+| PA-0061 | BF-001017 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $159.40 | payment_exceptions.csv L62 |
+| PA-0062 | BF-001042 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $105.69 | payment_exceptions.csv L63 |
+| PA-0063 | BF-001056 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $114.13 | payment_exceptions.csv L64 |
+| PA-0064 | BF-001062 | failed | code - · 3DS none · HTTP 504 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $69.89 | payment_exceptions.csv L65 |
+| PA-0065 | BF-001069 | failed | code 51 · 3DS none · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $132.84 | payment_exceptions.csv L66 |
+| PA-0066 | BF-001093 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $83.28 | payment_exceptions.csv L67 |
+| PA-0067 | BF-001098 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $71.11 | payment_exceptions.csv L68 |
+| PA-0068 | BF-001123 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $75.98 | payment_exceptions.csv L69 |
+| PA-0069 | BF-001126 | failed | code - · 3DS frictionless · HTTP 502 · risk allow | gateway_error | PI-GW | retry once with the same idempotency key | $97.35 | payment_exceptions.csv L70 |
+| PA-0070 | BF-001155 | failed | code 51 · 3DS none · HTTP 200 · risk allow | insufficient_funds | PI-NSF | do not retry; email the customer to update payment, cancel after 48h | $124.27 | payment_exceptions.csv L71 |
+| PA-0071 | BF-001169 | pending | code - · 3DS challenge_sent · HTTP 200 · risk allow | 3ds_timeout | PI-3DS | send the customer a fresh payment link to redo 3-D Secure | $95.52 | payment_exceptions.csv L72 |
+| PA-0072 | BF-001216 | failed | code 59 · 3DS none · HTTP 200 · risk block | risk_block | PI-RISK | manual review by a person; never auto-retry a risk block | $217.48 | payment_exceptions.csv L73 |
+
 ## Auditor
 
 ```text
 Cross-agent audit
-- 6 of 6 cross-agent consistency checks pass.
+- 11 of 11 cross-agent consistency checks pass.
 - Sentinel recall on fraud chargebacks: 53.8% [A3]
 - Fraud chargeback amount a hold would have protected: $1,980.31 [A4]
 - Net sales after approved refunds and accepted chargebacks: $112,507.58 [A5]
@@ -230,7 +347,13 @@ Cross-agent consistency checks:
 | C4 Payout variance is fully explained by the listed defects | ✅ pass | L16 unexplained = $0.00 | [L7] [L16] |
 | C5 Card-testing declines are a subset of all declines | ✅ pass | F7 18 <= R3 67 | [F7] [R3] |
 | C6 Every dispute points to a captured order and never exceeds the charge | ✅ pass | 0 disputes break this rule | [D1] [D6] |
+| C7 Payment Investigator has exactly one exception for every order the Revenue Analyst counted as declined | ✅ pass | P1 - P15 = 67 vs R3 67 | [P1] [P15] [R3] |
+| C8 No failed or pending payment shows up in the payout the Ledger Reconciler matched | ✅ pass | 0 of 67 non-duplicate exceptions have a settlement line | [P1] [L5] |
+| C9 Every duplicate authorisation is on a captured, settled order and equals its charge (refund is safe) | ✅ pass | 5 of 5 duplicates match a captured order in L1 and a settlement line | [P15] [P16] [L1] |
+| C10 No retry is recommended on an order the Fraud Sentinel flagged (score 50+) | ✅ pass | 0 of 23 retries are on flagged orders | [P17] [F2] |
+| C11 Every payment exception got a cause and an action | ✅ pass | P20 unclassified = 0 | [P1] [P20] |
 
+- Payment Investigator: 20 of 20 figures recomputed from raw rows match; 9 numbers in its summary checked, 0 unverified.
 - Fraud Sentinel: 8 of 8 figures recomputed from raw rows match; 9 numbers in its summary checked, 0 unverified.
 - Disputes Desk: 14 of 14 figures recomputed from raw rows match; 8 numbers in its summary checked, 0 unverified.
 - Ledger Reconciler: 16 of 16 figures recomputed from raw rows match; 8 numbers in its summary checked, 0 unverified.
@@ -238,47 +361,53 @@ Cross-agent consistency checks:
 
 ## How the agents ran (concurrency trace)
 
-Each row is one Mozaik agent loop (runLoop). Times are milliseconds since the Ops Lead's kickoff message. The four specialist loops overlapped in time (all four were running at once); the Auditor's verification loops start as soon as each specialist answers, while the others are still working.
+Each row is one Mozaik agent loop (runLoop). Times are milliseconds since the Ops Lead's kickoff message. The 5 specialist loops overlapped in time (all 5 were running at once); the Auditor's verification loops start as soon as each specialist answers, while the others are still working.
 
 ```text
-Fraud Sentinel                       ███████████████████                                    2–557   ms
-Disputes Desk                        ███████████████████                                    2–559   ms
-Ledger Reconciler                    █████████████████████                                  3–599   ms
-Revenue Analyst                      ███████████████████████                                3–649   ms
-Auditor (verify Fraud Sentinel)                         ███████████████████████████       557–1311  ms
-Auditor (verify Disputes Desk)                          ███████████████████████████       559–1312  ms
-Auditor (verify Ledger Reconciler)                        ███████████████████████████     599–1376  ms
-Auditor (verify Revenue Analyst)                            ██████████████████████████    649–1417  ms
-Auditor (cross-check)                                                   ███████████████  1005–1438  ms
+Fraud Sentinel                           ███████████████████                                    2–553   ms
+Disputes Desk                            ████████████████████                                   2–556   ms
+Ledger Reconciler                        █████████████████████                                  2–595   ms
+Revenue Analyst                          ███████████████████████                                2–647   ms
+Payment Investigator                     █████████████████                                      2–489   ms
+Auditor (verify Payment Investigator)                     ████████████████████████████        489–1284  ms
+Auditor (verify Fraud Sentinel)                             ███████████████████████████       553–1303  ms
+Auditor (verify Disputes Desk)                               ██████████████████████████       556–1304  ms
+Auditor (verify Ledger Reconciler)                            ███████████████████████████     596–1360  ms
+Auditor (verify Revenue Analyst)                                ██████████████████████████    647–1403  ms
+Auditor (cross-check)                                                       ███████████████   991–1425  ms
 ```
 
 ## Interception log (number gate)
 
 | t (ms) | Agent | Breakpoint | Action | Detail |
 | --- | --- | --- | --- | --- |
-| 234 | Fraud Sentinel | function_call | allowed | score_orders (read-only; no money can move) |
+| 233 | Fraud Sentinel | function_call | allowed | score_orders (read-only; no money can move) |
 | 286 | Revenue Analyst | function_call | allowed | sales_summary (read-only; no money can move) |
-| 393 | Disputes Desk | function_call | allowed | triage_disputes (read-only; no money can move) |
-| 410 | Ledger Reconciler | function_call | allowed | reconcile_settlements (read-only; no money can move) |
-| 556 | Fraud Sentinel | model_message | passed | 9 numbers checked, 0 unverified |
-| 559 | Disputes Desk | model_message | passed | 8 numbers checked, 0 unverified |
-| 599 | Ledger Reconciler | model_message | passed | 8 numbers checked, 0 unverified |
-| 649 | Revenue Analyst | model_message | passed | 7 numbers checked, 0 unverified |
-| 893 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
-| 900 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
-| 935 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
-| 986 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
-| 1183 | Auditor | function_call | allowed | cross_check (read-only; no money can move) |
-| 1311 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
-| 1312 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
-| 1376 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
-| 1417 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
-| 1438 | Auditor | model_message | passed | 5 numbers checked, 0 unverified |
+| 358 | Payment Investigator | function_call | allowed | investigate_payments (read-only; no money can move) |
+| 392 | Disputes Desk | function_call | allowed | triage_disputes (read-only; no money can move) |
+| 409 | Ledger Reconciler | function_call | allowed | reconcile_settlements (read-only; no money can move) |
+| 489 | Payment Investigator | model_message | passed | 9 numbers checked, 0 unverified |
+| 553 | Fraud Sentinel | model_message | passed | 9 numbers checked, 0 unverified |
+| 556 | Disputes Desk | model_message | passed | 8 numbers checked, 0 unverified |
+| 595 | Ledger Reconciler | model_message | passed | 8 numbers checked, 0 unverified |
+| 647 | Revenue Analyst | model_message | passed | 7 numbers checked, 0 unverified |
+| 825 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
+| 890 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
+| 892 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
+| 932 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
+| 983 | Auditor | function_call | allowed | verify_figures (read-only; no money can move) |
+| 1169 | Auditor | function_call | allowed | cross_check (read-only; no money can move) |
+| 1284 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
+| 1303 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
+| 1304 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
+| 1360 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
+| 1403 | Auditor | model_message | passed | 4 numbers checked, 0 unverified |
+| 1425 | Auditor | model_message | passed | 5 numbers checked, 0 unverified |
 
 ## Data and sources
 
-- `data/orders.csv`, `data/disputes.csv`, `data/settlements.csv`, `data/fee_schedule.csv`: synthetic, generated by `npm run generate-data` (seed 20261127). Line numbers count the header as line 1.
-- `data/POLICY.md`: the fraud, refund, chargeback and fee rules the agents apply (rule IDs are cited above).
+- `data/orders.csv`, `data/disputes.csv`, `data/settlements.csv`, `data/fee_schedule.csv`, `data/payment_exceptions.csv`: synthetic, generated by `npm run generate-data` (seed 20261127). Line numbers count the header as line 1.
+- `data/POLICY.md`: the fraud, refund, chargeback, fee and payment-exception (PI-*) rules the agents apply (rule IDs are cited above).
 - `reports/evidence.json`: every figure with its full list of source lines and the recipe the Auditor re-ran.
 
 > **Not financial advice. All data is synthetic (fixed seed, fictional store "Lumen & Loom"); no real customers, accounts or money are involved. Refund, chargeback and claim decisions are drafts for a human to review; nothing here moves money.**
