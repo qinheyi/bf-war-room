@@ -10,6 +10,8 @@ export type Data = {
   disputes: CsvRow[]
   settlements: CsvRow[]
   fees: CsvRow[]
+  /** Failed or pending payment attempts (added during the hackathon). */
+  exceptions: CsvRow[]
 }
 
 export function loadData(dir = DATA_DIR): Data {
@@ -20,5 +22,6 @@ export function loadData(dir = DATA_DIR): Data {
     disputes: read("disputes.csv"),
     settlements: read("settlements.csv"),
     fees: read("fee_schedule.csv"),
+    exceptions: read("payment_exceptions.csv"),
   }
 }

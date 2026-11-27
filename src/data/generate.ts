@@ -190,6 +190,8 @@ export function generateDataset(seed = SEED): Dataset {
     { payment_method: "chargeback_fee", pct: 0, fixed: CHARGEBACK_FEE.toFixed(2) },
   ]
 
+  const exceptions = generatePaymentExceptions(all, captured, burstDevice, seed)
+
   return {
     files: {
       "orders.csv": toCsv(
@@ -199,6 +201,7 @@ export function generateDataset(seed = SEED): Dataset {
       "disputes.csv": toCsv(["case_id", "order_id", "type", "reason", "amount", "opened_at", "respond_by", "tracking"], disputes),
       "settlements.csv": toCsv(["line_id", "payout_batch", "order_id", "payment_method", "gross", "fee", "net", "settled_at"], settlements),
       "fee_schedule.csv": toCsv(["payment_method", "pct", "fixed"], feeSchedule),
+      "payment_exceptions.csv": toCsv(EXCEPTION_COLUMNS, exceptions.rows),
     },
     planted: {
       note: "Ground truth of deliberately planted defects. Used only by tests; agents never read this file.",
@@ -208,6 +211,59 @@ export function generateDataset(seed = SEED): Dataset {
       settlement_duplicated: duplicated,
       settlement_fee_overcharge: overFee,
       settlement_gross_mismatch: grossMismatch,
+      payment_exception_causes: exceptions.truth,
     },
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Payment exceptions (added during the hackathon, 2026-11-27): the processor's report of payment
+// attempts that did not end in a clean capture. Uses its own RNG stream (seed + 1) so the four
+// original CSVs stay byte-identical. The rows carry raw signals only (status, response code, 3DS
+// state, gateway HTTP status, risk decision); the cause is never written into the CSV. The true
+// cause per attempt goes to planted_defects.json, which only the tests read.
+export const EXCEPTION_COLUMNS = ["attempt_id", "order_id", "attempted_at", "last_event_at", "payment_method", "amount", "status", "response_code", "three_ds", "gateway_http", "risk_decision"]
+
+type Row = Record<string, string | number>
+
+function generatePaymentExceptions(all: Row[], captured: Row[], burstDevice: string, seed: number): { rows: Row[]; truth: Record<string, string> } {
+  const r = rng(seed + 1)
+  const pick = <T,>(xs: T[]) => xs[Math.floor(r() * xs.length)]
+  const plus = (iso: string, min: number) => new Date(Date.parse(iso) + min * 60_000).toISOString().replace(".000Z", "Z")
+  const rows: Array<Row & { __cause: string }> = []
+  const base = (o: Row, at: string) => ({ order_id: o.order_id, attempted_at: at, payment_method: o.payment_method, amount: o.charged_amount })
+  for (const o of all) {
+    if (o.status !== "declined") continue
+    const at = String(o.created_at)
+    // Orders with any risk signal were stopped by the processor's risk engine.
+    const risky = o.device_id === burstDevice || o.avs !== "Y" || o.cvv === "N" || Number(o.account_age_days) < 2
+    let cause = risky ? "risk_block" : pick(["3ds_timeout", "3ds_timeout", "3ds_timeout", "insufficient_funds", "insufficient_funds", "gateway_error", "gateway_error", "issuer_decline"])
+    if (cause === "3ds_timeout" && o.payment_method === "wallet") cause = "gateway_error" // wallets have no 3DS challenge
+    const sig: Row =
+      cause === "risk_block"
+        ? { status: "failed", response_code: "59", three_ds: "none", gateway_http: 200, risk_decision: "block", last_event_at: plus(at, 0) }
+        : cause === "3ds_timeout"
+          ? { status: "pending", response_code: "", three_ds: "challenge_sent", gateway_http: 200, risk_decision: "allow", last_event_at: plus(at, 1 + Math.floor(r() * 3)) }
+          : cause === "gateway_error"
+            ? { status: r() < 0.6 ? "pending" : "failed", response_code: "", three_ds: o.payment_method === "wallet" ? "none" : "frictionless", gateway_http: pick([502, 504, 504]), risk_decision: "allow", last_event_at: plus(at, Math.floor(r() * 2)) }
+            : cause === "insufficient_funds"
+              ? { status: "failed", response_code: "51", three_ds: o.payment_method === "wallet" ? "none" : "frictionless", gateway_http: 200, risk_decision: "allow", last_event_at: plus(at, 0) }
+              : { status: "failed", response_code: "05", three_ds: o.payment_method === "wallet" ? "none" : "frictionless", gateway_http: 200, risk_decision: "allow", last_event_at: plus(at, 0) }
+    rows.push({ attempt_id: "", ...base(o, at), ...sig, __cause: cause })
+  }
+  // Duplicate authorisations: a second, still-pending approval on an order that was already captured.
+  const clean = captured.filter((o) => o.device_id !== burstDevice && o.avs === "Y" && o.cvv === "M")
+  const dupOrders = new Set<Row>()
+  while (dupOrders.size < 5) dupOrders.add(pick(clean))
+  for (const o of dupOrders) {
+    const at = plus(String(o.created_at), 1 + Math.floor(r() * 4))
+    rows.push({ attempt_id: "", ...base(o, at), status: "pending", response_code: "00", three_ds: o.payment_method === "wallet" ? "none" : "frictionless", gateway_http: 200, risk_decision: "allow", last_event_at: at, __cause: "duplicate_charge" })
+  }
+  rows.sort((a, b) => String(a.attempted_at).localeCompare(String(b.attempted_at)) || String(a.order_id).localeCompare(String(b.order_id)))
+  const truth: Record<string, string> = {}
+  rows.forEach((row, i) => {
+    row.attempt_id = `PA-${pad(i + 1, 4)}`
+    truth[String(row.attempt_id)] = row.__cause
+  })
+  return { rows, truth }
 }
