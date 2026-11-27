@@ -38,7 +38,7 @@ export function loopTimeline(r: WarRoomResult) {
   let maxConcurrent = 0
   for (const l of list) maxConcurrent = Math.max(maxConcurrent, list.filter((o) => o.start <= l.start && o.end >= l.start).length)
   const spec = list.filter((l) => (SPECIALISTS as readonly string[]).includes(l.agent))
-  const specialistsOverlap = spec.length === 4 && Math.max(...spec.map((l) => l.start)) < Math.min(...spec.map((l) => l.end))
+  const specialistsOverlap = spec.length === SPECIALISTS.length && Math.max(...spec.map((l) => l.start)) < Math.min(...spec.map((l) => l.end))
   return { list, maxConcurrent, specialistsOverlap }
 }
 
@@ -77,6 +77,7 @@ export function buildBlocks(r: WarRoomResult): Block[] {
       `**Answer ${f("D14")} chargebacks due within 7 days.** Fight ${f("D7")} (${f("D8")}) with AVS/CVV/delivery proof; accept ${f("D9")} (${f("D10")}).`,
       `**Approve ${f("D2")} refunds** (${f("D3")}) and decline ${f("D4")} final-sale request (${f("D5")}).`,
       `**File processor claims**: ${f("L8")} captured orders never paid out (${f("L9")}), ${f("L14")} short settlements (${f("L15")}), ${f("L12")} fee overcharges (${f("L13")}). Set aside the ${f("L11")} paid twice on ${f("L10")} orders for the clawback.`,
+      `**Work the payment exceptions** (new: Payment Investigator): retry ${f("P17")} stuck payments worth ${f("P18")} (${f("P5")} 3-D Secure timeouts get a fresh payment link, ${f("P7")} gateway errors get one idempotent retry); void ${f("P15")} duplicate authorisations on already-paid orders (${f("P16")}); send ${f("P13")} risk-engine blocks (${f("P14")}) to manual review; email the ${f("P9")} insufficient-funds and ${f("P11")} other declined customers instead of retrying.`,
       `Payout variance is ${f("L7")} and the unexplained remainder is ${f("L16")}.`,
     ],
   })
@@ -85,7 +86,7 @@ export function buildBlocks(r: WarRoomResult): Block[] {
   blocks.push({
     kind: "table",
     head: ["Figure", "Value", "Evidence"],
-    rows: ["R7", "R2", "R8", "R6", "R10", "D13", "A5", "A3", "A4"].map((id) => [L.get(id)!.label, formatValue(L.get(id)!), `[${id}]`]),
+    rows: ["R7", "R2", "R8", "R6", "R10", "D13", "A5", "A3", "A4", "P18", "P16"].map((id) => [L.get(id)!.label, formatValue(L.get(id)!), `[${id}]`]),
   })
 
   for (const agent of [...SPECIALISTS, "Auditor"]) {
@@ -110,6 +111,24 @@ export function buildBlocks(r: WarRoomResult): Block[] {
       blocks.push({ kind: "p", text: "Processor claims to file (drafts; each net impact = settled net minus expected net for that order):" })
       blocks.push({ kind: "table", head: ["Type", "Order", "Settlement lines", "Net impact", "What to do"], rows: state.recon.claims.map((c) => [c.kind, c.orderId, c.settlementLines.join(" ") || "(none)", usd(c.netImpact), c.note]) })
     }
+    if (agent === "Payment Investigator" && state.payments) {
+      blocks.push({ kind: "p", text: "Every failed or pending payment attempt, its cause (derived from the raw signals; the CSV has no cause column) and the recommended action (drafts; nothing is retried or refunded automatically):" })
+      blocks.push({
+        kind: "table",
+        head: ["Attempt", "Order", "Status", "Signals", "Cause", "Rule", "Action", "Amount", "Source"],
+        rows: state.payments.cases.map((c) => [
+          c.row.attempt_id,
+          c.row.order_id,
+          c.row.status,
+          `code ${c.row.response_code || "-"} · 3DS ${c.row.three_ds} · HTTP ${c.row.gateway_http} · risk ${c.row.risk_decision}`,
+          c.cause,
+          c.rule,
+          c.actionText,
+          usd(Number(c.row.amount)),
+          `payment_exceptions.csv L${c.row.__line}`,
+        ]),
+      })
+    }
     if (agent === "Auditor") {
       blocks.push({ kind: "p", text: "Cross-agent consistency checks:" })
       blocks.push({ kind: "table", head: ["Check", "Result", "Detail", "Evidence"], rows: checks.map((c) => [`${c.id} ${c.title}`, c.ok ? "✅ pass" : "❌ fail", c.detail, c.refs.map((x) => `[${x}]`).join(" ")]) })
@@ -120,7 +139,7 @@ export function buildBlocks(r: WarRoomResult): Block[] {
   blocks.push({ kind: "h2", text: "How the agents ran (concurrency trace)" })
   blocks.push({
     kind: "p",
-    text: `Each row is one Mozaik agent loop (runLoop). Times are milliseconds since the Ops Lead's kickoff message. The four specialist loops ${tl.specialistsOverlap ? "overlapped in time (all four were running at once)" : "did not all overlap"}; the Auditor's verification loops start as soon as each specialist answers, while the others are still working.`,
+    text: `Each row is one Mozaik agent loop (runLoop). Times are milliseconds since the Ops Lead's kickoff message. The ${SPECIALISTS.length} specialist loops ${tl.specialistsOverlap ? `overlapped in time (all ${SPECIALISTS.length} were running at once)` : "did not all overlap"}; the Auditor's verification loops start as soon as each specialist answers, while the others are still working.`,
   })
   const span = Math.max(1, ...tl.list.map((l) => l.end))
   blocks.push({
@@ -129,8 +148,8 @@ export function buildBlocks(r: WarRoomResult): Block[] {
       .map((l) => {
         const a = Math.round((l.start / span) * 50)
         const b = Math.max(a + 1, Math.round((l.end / span) * 50))
-        const label = `${l.agent}${l.agent === "Auditor" ? ` (${l.purpose.startsWith("All four") ? "cross-check" : l.purpose.replace("Verify the figures reported by ", "verify ").replace(".", "")})` : ""}`
-        return `${label.padEnd(36)} ${" ".repeat(a)}${"█".repeat(b - a)}${" ".repeat(Math.max(0, 50 - b))} ${String(l.start).padStart(5)}–${String(l.end).padEnd(5)} ms`
+        const label = `${l.agent}${l.agent === "Auditor" ? ` (${l.purpose.startsWith("All specialists") ? "cross-check" : l.purpose.replace("Verify the figures reported by ", "verify ").replace(".", "")})` : ""}`
+        return `${label.padEnd(40)} ${" ".repeat(a)}${"█".repeat(b - a)}${" ".repeat(Math.max(0, 50 - b))} ${String(l.start).padStart(5)}–${String(l.end).padEnd(5)} ms`
       })
       .join("\n"),
   })
@@ -143,8 +162,8 @@ export function buildBlocks(r: WarRoomResult): Block[] {
   blocks.push({
     kind: "list",
     items: [
-      "`data/orders.csv`, `data/disputes.csv`, `data/settlements.csv`, `data/fee_schedule.csv`: synthetic, generated by `npm run generate-data` (seed 20261127). Line numbers count the header as line 1.",
-      "`data/POLICY.md`: the fraud, refund, chargeback and fee rules the agents apply (rule IDs are cited above).",
+      "`data/orders.csv`, `data/disputes.csv`, `data/settlements.csv`, `data/fee_schedule.csv`, `data/payment_exceptions.csv`: synthetic, generated by `npm run generate-data` (seed 20261127). Line numbers count the header as line 1.",
+      "`data/POLICY.md`: the fraud, refund, chargeback, fee and payment-exception (PI-*) rules the agents apply (rule IDs are cited above).",
       "`reports/evidence.json`: every figure with its full list of source lines and the recipe the Auditor re-ran.",
     ],
   })

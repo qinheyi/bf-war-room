@@ -27,6 +27,44 @@ class RawFiles {
     if (idx < 0) throw new Error(`${file} has no column ${column}`)
     return text.split(",")[idx]
   }
+  /** Line numbers of every non-empty data line (header = line 1). */
+  dataLines(file: string): number[] {
+    const f = this.load(file)
+    const out: number[] = []
+    for (let i = 1; i < f.lines.length; i++) if (f.lines[i] !== "") out.push(i + 1)
+    return out
+  }
+  /** Raw scan of orders.csv: order_id -> status. */
+  orderStatus(): Map<string, string> {
+    const m = new Map<string, string>()
+    for (const l of this.dataLines("orders.csv")) m.set(this.cell("orders.csv", l, "order_id"), this.cell("orders.csv", l, "status"))
+    return m
+  }
+}
+
+// ---------- Payment exceptions: the Auditor's own reading of the PI-* rules in data/POLICY.md ----------
+// Written separately from src/analytics/payments.ts on purpose: a table of (cause, test) pairs over raw
+// cells, checked in policy order. If the two implementations ever disagree, the "cause" check fails.
+const EXC = "payment_exceptions.csv"
+type RawAttempt = { status: string; code: string; threeDs: string; http: number; risk: string; orderStatus: string | undefined }
+const PI_RULES: Array<[string, (a: RawAttempt) => boolean]> = [
+  ["duplicate_charge", (a) => a.code === "00" && a.orderStatus === "captured"], // PI-DUP
+  ["risk_block", (a) => a.risk === "block"], // PI-RISK
+  ["gateway_error", (a) => a.http >= 500 && a.http <= 599], // PI-GW
+  ["3ds_timeout", (a) => a.status === "pending" && a.threeDs === "challenge_sent"], // PI-3DS
+  ["insufficient_funds", (a) => a.code === "51"], // PI-NSF
+  ["issuer_decline", (a) => a.status === "failed" && /^\d\d$/.test(a.code) && a.code !== "00"], // PI-ISSUER
+]
+export function auditCause(raw: RawFiles, line: number, orders: Map<string, string>): string {
+  const a: RawAttempt = {
+    status: raw.cell(EXC, line, "status"),
+    code: raw.cell(EXC, line, "response_code"),
+    threeDs: raw.cell(EXC, line, "three_ds"),
+    http: Number(raw.cell(EXC, line, "gateway_http")),
+    risk: raw.cell(EXC, line, "risk_decision"),
+    orderStatus: orders.get(raw.cell(EXC, line, "order_id")),
+  }
+  return PI_RULES.find(([, test]) => test(a))?.[0] ?? "unclassified"
 }
 
 const cents = (n: number) => Math.round(n * 100)
@@ -89,6 +127,17 @@ export function recompute(e: Evidence, raw: RawFiles, ledger: EvidenceLedger): n
       return c.lines.reduce((a, l) => a + cents(feeOf(raw.cell(c.file, l, "payment_method"), Number(raw.cell(c.file, l, c.amountColumn)))), 0) / 100
     case "lookup":
       return Number(raw.cell(c.file, c.line, c.column))
+    case "cause": {
+      // Re-classify every row of the file, not just the cited ones: the cited set must be complete and exact.
+      const orders = raw.orderStatus()
+      const mine = raw.dataLines(EXC).filter((l) => auditCause(raw, l, orders) === c.cause)
+      const cited = [...new Set(c.lines)].sort((a, b) => a - b)
+      if (cited.length !== c.lines.length) throw new Error(`duplicate line citations for ${c.cause}`)
+      const extra = cited.filter((l) => !mine.includes(l))
+      const missed = mine.filter((l) => !cited.includes(l))
+      if (extra.length || missed.length) throw new Error(`${c.cause}: cited lines disagree with re-classification (not ${c.cause}: ${extra.map((l) => `L${l}`).join(" ") || "-"}; missed: ${missed.map((l) => `L${l}`).join(" ") || "-"})`)
+      return c.measure === "count" ? mine.length : mine.reduce((a, l) => a + cents(Number(raw.cell(EXC, l, "amount"))), 0) / 100
+    }
     case "netDiff": {
       const actual = c.settlementLines.reduce((a, l) => a + cents(Number(raw.cell("settlements.csv", l, "net"))), 0)
       const expected = c.orderLines.reduce((a, l) => {
@@ -106,7 +155,7 @@ export function recompute(e: Evidence, raw: RawFiles, ledger: EvidenceLedger): n
       })
   }
   function headerFirst(file: string) {
-    return file === "orders.csv" ? "order_id" : file === "disputes.csv" ? "case_id" : file === "settlements.csv" ? "line_id" : "payment_method"
+    return file === "orders.csv" ? "order_id" : file === "disputes.csv" ? "case_id" : file === "settlements.csv" ? "line_id" : file === EXC ? "attempt_id" : "payment_method"
   }
 }
 
@@ -173,7 +222,12 @@ export function gateAnswer(text: string, allowed: Evidence[]): GateResult {
     const n = raw.replace(/[$,%]/g, "").replace(/^-/, "")
     if (!ok.has(n) && !ok.has(String(Number(n)))) unverified.push(raw)
   }
+  // Rewrite whole numeric tokens only: an unverified "11" must not corrupt "$112,507.58" or "PA-0011".
+  // (Fixed 2026-11-27 after the first five-agent live run; it used to be a plain substring replace.)
   let out = text
-  for (const u of new Set(unverified)) out = out.split(u).join(`⟦unverified: ${u}⟧`)
+  for (const u of new Set(unverified)) {
+    const esc = u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    out = out.replace(new RegExp(`(?<![\\w.,$-])${esc}(?![\\w%]|[.,]\\d)`, "g"), `⟦unverified: ${u}⟧`)
+  }
   return { checked: found.length, unverified, text: out }
 }

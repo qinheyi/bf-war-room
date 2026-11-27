@@ -3,12 +3,13 @@ import type { Data } from "../data/load.ts"
 import { EvidenceLedger, formatValue, type Evidence } from "../evidence.ts"
 import { round1, round2 } from "../util.ts"
 import type { FraudResult } from "./fraud.ts"
+import type { PaymentsResult } from "./payments.ts"
 
 export type Consistency = { id: string; title: string; ok: boolean; detail: string; refs: string[] }
 
 export type CrossResult = { figures: Evidence[]; checks: Consistency[] }
 
-export function runCrossChecks(data: Data, ledger: EvidenceLedger, fraud: FraudResult, agent = "Auditor"): CrossResult {
+export function runCrossChecks(data: Data, ledger: EvidenceLedger, fraud: FraudResult, payments?: PaymentsResult, agent = "Auditor"): CrossResult {
   const P = "A"
   const get = (id: string) => {
     const e = ledger.get(id)
@@ -39,5 +40,67 @@ export function runCrossChecks(data: Data, ledger: EvidenceLedger, fraud: FraudR
     { id: "C5", title: "Card-testing declines are a subset of all declines", ok: get("F7").value <= get("R3").value, detail: `F7 ${formatValue(get("F7"))} <= R3 ${formatValue(get("R3"))}`, refs: ["F7", "R3"] },
     { id: "C6", title: "Every dispute points to a captured order and never exceeds the charge", ok: badDisputes.length === 0, detail: `${badDisputes.length} disputes break this rule`, refs: ["D1", "D6"] },
   ]
+  if (payments) checks.push(...paymentChecks(data, ledger, fraud, payments))
   return { figures: [a1, a2, a3, a4, a5], checks }
+}
+
+/** Payment Investigator vs the other desks (added during the hackathon, 2026-11-27). */
+export function paymentChecks(data: Data, ledger: EvidenceLedger, fraud: FraudResult, payments: PaymentsResult): Consistency[] {
+  const get = (id: string) => {
+    const e = ledger.get(id)
+    if (!e) throw new Error(`missing evidence ${id}`)
+    return e
+  }
+  const orderById = new Map(data.orders.map((o) => [o.order_id, o]))
+  const settledOrders = new Set(data.settlements.map((s) => s.order_id))
+  const declined = new Set(data.orders.filter((o) => o.status === "declined").map((o) => o.order_id))
+  const nonDup = payments.cases.filter((c) => c.cause !== "duplicate_charge")
+  const nonDupOrders = new Set(nonDup.map((c) => c.row.order_id))
+  const sameSet = nonDupOrders.size === declined.size && [...declined].every((id) => nonDupOrders.has(id)) && nonDupOrders.size === nonDup.length
+  const paidOut = nonDup.filter((c) => settledOrders.has(c.row.order_id))
+  const dups = payments.cases.filter((c) => c.cause === "duplicate_charge")
+  const badDups = dups.filter((c) => {
+    const o = orderById.get(c.row.order_id)
+    return !o || o.status !== "captured" || Number(c.row.amount) !== Number(o.charged_amount) || !settledOrders.has(c.row.order_id)
+  })
+  const flagged = new Set(fraud.scored.filter((s) => s.score >= 50).map((s) => s.row.order_id))
+  const riskyRetries = payments.cases.filter((c) => c.action === "retry" && flagged.has(c.row.order_id))
+  const expectNonDup = get("P1").value - get("P15").value
+  return [
+    {
+      id: "C7",
+      title: "Payment Investigator has exactly one exception for every order the Revenue Analyst counted as declined",
+      ok: sameSet && expectNonDup === get("R3").value,
+      detail: `P1 - P15 = ${formatValue({ value: expectNonDup, unit: "count" })} vs R3 ${formatValue(get("R3"))}`,
+      refs: ["P1", "P15", "R3"],
+    },
+    {
+      id: "C8",
+      title: "No failed or pending payment shows up in the payout the Ledger Reconciler matched",
+      ok: paidOut.length === 0,
+      detail: `${paidOut.length} of ${nonDup.length} non-duplicate exceptions have a settlement line`,
+      refs: ["P1", "L5"],
+    },
+    {
+      id: "C9",
+      title: "Every duplicate authorisation is on a captured, settled order and equals its charge (refund is safe)",
+      ok: badDups.length === 0 && dups.length === get("P15").value,
+      detail: `${dups.length - badDups.length} of ${dups.length} duplicates match a captured order in L1 and a settlement line`,
+      refs: ["P15", "P16", "L1"],
+    },
+    {
+      id: "C10",
+      title: "No retry is recommended on an order the Fraud Sentinel flagged (score 50+)",
+      ok: riskyRetries.length === 0,
+      detail: `${riskyRetries.length} of ${get("P17").value} retries are on flagged orders`,
+      refs: ["P17", "F2"],
+    },
+    {
+      id: "C11",
+      title: "Every payment exception got a cause and an action",
+      ok: get("P20").value === 0,
+      detail: `P20 unclassified = ${formatValue(get("P20"))}`,
+      refs: ["P1", "P20"],
+    },
+  ]
 }

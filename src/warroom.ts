@@ -1,4 +1,4 @@
-// The war room: one Mozaik runtime, four specialist agents running concurrently, an Auditor agent
+// The war room: one Mozaik runtime, five specialist agents running concurrently, an Auditor agent
 // that checks each of them the moment they report, and two observers (report desk, flight recorder).
 import {
   Agent,
@@ -23,11 +23,13 @@ import { runFraud, type FraudResult } from "./analytics/fraud.ts"
 import { runDisputes, type DisputesResult } from "./analytics/disputes.ts"
 import { runReconcile, type ReconResult } from "./analytics/reconcile.ts"
 import { runRevenue, type RevenueResult } from "./analytics/revenue.ts"
+import { runPayments, type PaymentsResult } from "./analytics/payments.ts"
 import { runCrossChecks, type CrossResult } from "./analytics/crosscheck.ts"
 import { gateAnswer, verifyFigures, type GateResult, type Verdict } from "./audit.ts"
 import { buildModels, stats, type Provider } from "./models.ts"
 
-export const SPECIALISTS = ["Fraud Sentinel", "Disputes Desk", "Ledger Reconciler", "Revenue Analyst"] as const
+// "Payment Investigator" was added during the hackathon (2026-11-27); the other four predate kickoff.
+export const SPECIALISTS = ["Fraud Sentinel", "Disputes Desk", "Ledger Reconciler", "Revenue Analyst", "Payment Investigator"] as const
 export type Specialist = (typeof SPECIALISTS)[number]
 
 export type TraceEvent = { t: number; type: string; producer: string; loopId?: string; detail?: string }
@@ -42,6 +44,7 @@ export class WarRoomState extends RuntimeState {
   disputes?: DisputesResult
   recon?: ReconResult
   revenue?: RevenueResult
+  payments?: PaymentsResult
   cross?: CrossResult
   answers = new Map<string, { text: string; gate: GateResult }>()
   verdicts = new Map<string, Verdict[]>()
@@ -67,6 +70,9 @@ const INSTRUCTIONS: Record<Specialist | "Auditor", string> = {
   "Disputes Desk": "You are the Disputes Desk. You decide refund requests and chargebacks by the store's written policy and list what is due soon. " + SHARED_RULES,
   "Ledger Reconciler": "You are the Ledger Reconciler. You match captured orders to the processor's settlement report and explain every cent of variance. " + SHARED_RULES,
   "Revenue Analyst": "You are the Revenue Analyst. You report what Black Friday actually brought in: sales, discounts, peak hour and payment mix. " + SHARED_RULES,
+  "Payment Investigator":
+    "You are the Payment Investigator. You work out why each failed or stuck payment did not capture (3-D Secure timeout, insufficient funds, risk block, gateway error, duplicate charge) and recommend retry, refund, manual review or contacting the customer, by the PI rules in the store policy. " +
+    SHARED_RULES,
   Auditor:
     "You are the Auditor. You never trust another agent's numbers: your tool recomputes them from the raw CSV lines and checks agents against each other. " +
     SHARED_RULES,
@@ -187,13 +193,19 @@ export async function runWarRoom(opts: { provider: Provider; env?: NodeJS.Proces
       const r = (state.revenue = runRevenue(data, ledger))
       return toolPayload("Revenue Analyst", r.figures, ["R7", "R2", "R8", "R6", "R10", "R4", "R13"])
     }),
+    "Payment Investigator": tool("investigate_payments", "Classify every failed or pending payment attempt by the PI rules in data/POLICY.md and recommend retry, refund, manual review or contacting the customer.", async () => {
+      const r = (state.payments = runPayments(data, ledger))
+      return toolPayload("Payment Investigator", r.figures, ["P1", "P17", "P18", "P15", "P16", "P13", "P14", "P9"], {
+        cases: r.cases.slice(0, 8).map((c) => ({ attempt: c.row.attempt_id, order: c.row.order_id, cause: c.cause, rule: c.rule, action: c.action })),
+      })
+    }),
   }
   const specialists = SPECIALISTS.map((n) =>
     createAgent({ name: n, capabilities: ["inference", "payments-analysis"], instruction: INSTRUCTIONS[n], tools: [specialistTools[n]], handlers: [{ specification: kickoffSpec(() => opsLeadId), processor: startLoop }] }),
   )
   const specialistIds = new Set(specialists.map((a) => a.getId()))
 
-  // ---- Auditor: verifies each specialist as soon as it answers; cross-checks once all four are in ----
+  // ---- Auditor: verifies each specialist as soon as it answers; cross-checks once all of them are in ----
   const freshContext = (instruction: string) => ModelContext.create().addContextItem(DeveloperMessageItem.create(instruction))
   const auditorGate = (purpose: string) =>
     numberGate(
@@ -202,6 +214,10 @@ export async function runWarRoom(opts: { provider: Provider; env?: NodeJS.Proces
       const meta = [...state.verdicts.values()].flat().length
       const extra = [meta, ...[...state.verdicts.values()].map((v) => v.length), ...[...state.verdicts.values()].map((v) => v.filter((x) => x.ok).length)]
       for (const a of state.answers.values()) extra.push(a.gate.checked, a.gate.unverified.length)
+      // Cross-check tallies and the desk count are figures the Auditor may quote too (fixed 2026-11-27:
+      // with 11 checks the "11 of 11" line was wrongly flagged in the first five-agent live run).
+      if (state.cross) extra.push(state.cross.checks.length, state.cross.checks.filter((c) => c.ok).length)
+      extra.push(SPECIALISTS.length)
       return [...ledger.all(), ...extra.map((value) => ({ id: "META", agent: "Auditor", label: purpose, value, unit: "count" as const, formula: "", check: { kind: "derived" as const, expr: "0" } }))]
       },
       `Auditor: ${purpose}`,
@@ -218,9 +234,10 @@ export async function runWarRoom(opts: { provider: Provider; env?: NodeJS.Proces
       sendEvent(SemanticEvent.create("audit.agent_verified", auditor.getId(), { agent, ok: okN === v.length }), auditor.getId())
       return { headline: `Audit of ${agent}`, brief: [line, ...v.filter((x) => !x.ok).map((x) => `MISMATCH ${x.id}: reported ${x.expected}, recomputed ${x.recomputed}`)] }
     })
-  const crossTool = tool("cross_check", "Check the four specialists against each other and compute cross-agent figures.", async () => {
+  const crossTool = tool("cross_check", "Check the specialists against each other and compute cross-agent figures.", async () => {
     if (!state.fraud) throw new Error("fraud results missing")
-    const r = (state.cross = runCrossChecks(data, ledger, state.fraud))
+    if (!state.payments) throw new Error("payment investigation results missing")
+    const r = (state.cross = runCrossChecks(data, ledger, state.fraud, state.payments))
     state.verdicts.set("Auditor", verifyFigures(r.figures, ledger, data.dir)) // the Auditor's own figures go through the same recompute
     const passed = r.checks.filter((c) => c.ok).length
     return {
@@ -249,7 +266,7 @@ export async function runWarRoom(opts: { provider: Provider; env?: NodeJS.Proces
           apply() {
             if (state.verdicts.size < SPECIALISTS.length || state.crossCheckStarted) return
             state.crossCheckStarted = true
-            runLoop(auditor.getId(), "All four specialists are verified. Run the cross-agent checks.", { model, context: freshContext(INSTRUCTIONS.Auditor), tools: [crossTool] }, auditorGate("cross-check"))
+            runLoop(auditor.getId(), "All specialists are verified. Run the cross-agent checks.", { model, context: freshContext(INSTRUCTIONS.Auditor), tools: [crossTool] }, auditorGate("cross-check"))
           },
         },
       },
@@ -257,7 +274,7 @@ export async function runWarRoom(opts: { provider: Provider; env?: NodeJS.Proces
         specification: new Is(({ event, participant }) => event.type === "model.answer" && event.producerId === participant.getId()),
         processor: {
           apply({ event }) {
-            // Finish only when every auditor loop (4 verifications + 1 cross-check) has answered.
+            // Finish only when every auditor loop (one verification per specialist + 1 cross-check) has answered.
             state.auditorAnswers++
             if (state.auditorAnswers === SPECIALISTS.length + 1 && state.cross) {
               sendEvent(SemanticEvent.create("audit.completed", auditor.getId(), {}), auditor.getId())
@@ -303,7 +320,7 @@ export async function runWarRoom(opts: { provider: Provider; env?: NodeJS.Proces
   const timer = setTimeout(() => rejectDone(new Error(`war room timed out after ${opts.timeoutMs ?? 120000} ms`)), opts.timeoutMs ?? 120000)
   try {
     for (const p of [recorder, reportDesk, auditor, ...specialists, opsLead]) join(p)
-    // One message; four agents react to it at the same instant and run their loops concurrently.
+    // One message; five specialist agents react to it at the same instant and run their loops concurrently.
     sendMessage("Black Friday is closed. Each desk: run your checks on the synthetic data and report back with evidence IDs.", opsLead.getId())
     await done
   } finally {

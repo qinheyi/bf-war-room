@@ -13,6 +13,9 @@ export type Check =
   | { kind: "derived"; expr: string }
   /** sum(net of settlement lines) - sum(charged_amount - expected fee) over order lines. */
   | { kind: "netDiff"; orderLines: number[]; settlementLines: number[] }
+  /** payment_exceptions.csv lines whose cause (PI-* rules) is `cause`. The Auditor re-classifies every
+   *  row of the file itself, requires the cited lines to be exactly that set, then counts or sums them. */
+  | { kind: "cause"; lines: number[]; cause: string; measure: "count" | "sum" }
 
 export type Evidence = {
   id: string
@@ -64,9 +67,10 @@ export function describeSource(c: Check): string {
   if (c.kind === "netDiff")
     return `settlements.csv ${c.settlementLines.map((l) => `L${l}`).join(", ") || "(none)"} vs orders.csv ${c.orderLines.map((l) => `L${l}`).join(", ")}`
   if (c.kind === "lookup") return `${c.file} L${c.line} column ${c.column}`
+  const file = c.kind === "cause" ? "payment_exceptions.csv" : c.file
   const lines = c.lines
-  if (lines.length === 0) return `${c.file} (0 rows)`
+  if (lines.length === 0) return `${file} (0 rows)`
   const shown = lines.slice(0, 6).map((l) => `L${l}`).join(", ")
   const more = lines.length > 6 ? `, … (+${lines.length - 6})` : ""
-  return `${c.file} ${shown}${more} [${int(lines.length)} rows]`
+  return `${file} ${shown}${more} [${int(lines.length)} rows]${c.kind === "cause" ? ` re-classified: ${c.cause}` : ""}`
 }
